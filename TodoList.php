@@ -50,15 +50,34 @@ class TodoList extends StudipPlugin implements SystemPlugin
     {
         $ids = Request::optionArray('ids');
         
-        $query = "SELECT item_id, state
+        $query = "SELECT item_id, state, chdate, mkdate, user_id
                   FROM todolist_items
                   WHERE item_id IN (:ids)";
         $statement = DBManager::get()->prepare($query);
         $statement->bindValue(':ids', $ids, StudipPDO::PARAM_ARRAY);
         $statement->execute();
-        $states = $statement->fetchGrouped(PDO::FETCH_COLUMN);
-        
+        $temp = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        $states = array();
+        foreach ($temp as $row) {
+            $states[$row['item_id']] = array(
+                'checked' => (bool)$row['state'],
+                'info'    => studip_utf8encode(self::get_item_info($row)),
+            );
+        }
+
         $this->render_json(compact('states'));
+    }
+    
+    private function get_item_info($row)
+    {
+        if ($row['chdate'] === $row['mkdate']) {
+            return '';
+        }
+
+        return sprintf(_('Letzte Änderung %s von %s'),
+                         reltime($row['chdate']),
+                         User::find($row['user_id'])->getFullName());
     }
     
     private function render_json($data)
@@ -88,15 +107,20 @@ class TodoList extends StudipPlugin implements SystemPlugin
 
     public static function markup($markup, $matches, $contents)
     {
-        $query = "SELECT state FROM todolist_items WHERE item_id = :id";
+        $query = "SELECT state, user_id, chdate, mkdate FROM todolist_items WHERE item_id = :id";
         $statement = DBManager::get()->prepare($query);
         $statement->bindValue(':id', $matches[1]);
         $statement->execute();
-        $checked = $statement->fetchColumn() ?: false;
+        $temp = $statement->fetch(PDO::FETCH_ASSOC);
         
-        $uniqid = 'todo-' . $matches[1];
-        
-        return sprintf('<input id="todo-%1$s" type="checkbox" data-todoitem="%1$s"%2$s><label for="todo-%1$s"></label>',
-                       $matches[1], $checked ? ' checked' : '');
+        $checked   = (bool)$temp['state'];
+        $user_info = self::get_item_info($temp);
+
+        $template = '<input id="todo-%1$s" type="checkbox" data-todoitem="%1$s"%2$s>'
+                  . '<label for="todo-%1$s" title="%3$s"></label>';
+        return sprintf($template,
+                       $matches[1],
+                       $checked ? ' checked' : '',
+                       $user_info);
     }
 }

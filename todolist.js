@@ -1,5 +1,7 @@
 (function ($) {
 
+    // Change handler, triggered if checkbox is manipulated
+    // Sends the new state to the server
     $(document).on('change', ':checkbox[data-todoitem]', function () {
         var $that = $(this),
             id    = $that.data().todoitem,
@@ -19,10 +21,11 @@
         });
     });
 
-    var polling = false;
-    function poll()
-    {
-        if (polling) {
+    // Polling mechanism, actively watch for changes on server
+    var polling     = false,
+        should_poll = true;
+    function poll() {
+        if (!should_poll || polling) {
             return;
         }
         polling = true;
@@ -33,24 +36,33 @@
             }),
             ids  = $.makeArray(temp);
 
-        $.ajax({
-            type: 'POST',
-            url: url + 'poll',
-            data: {ids: ids},
-            dataType: 'json'
-        }).done(function (response) {
+        $.getJSON(url + 'poll', {ids: ids}, function (response) {
             $(':checkbox[data-todoitem]').each(function () {
-                var id   = $(this).data().todoitem,
-                    state = (response.states[id] || '0') === '1';
-                $(this).prop('checked', state);
+                var id      = $(this).data().todoitem,
+                    checked = false,
+                    info    = '';
+                if (response.states[id]) {
+                    checked = response.states[id].checked;
+                    info    = response.states[id].info;
+                }
+                $(this).prop('checked', checked);
+                $(this).next('label').attr('title', info);
             });
         }).always(function () {
             polling = false;
         });
     }
 
+    $(window).blur(function () {
+        console.log('no polling!');
+        should_poll = false;
+    }).focus(function () {
+        console.log('polling!');
+        should_poll = true;
+    })
+
     $(document).ready(function () {
-        setInterval(poll, 5000);
+        setInterval(poll, 30 * 1000);
     });
 
     
