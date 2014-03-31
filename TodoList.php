@@ -14,10 +14,7 @@ class TodoList extends StudipPlugin implements SystemPlugin
     {
         parent::__construct();
 
-        // transformation markup for voting element
         StudipTransformFormat::addStudipMarkup('todolist_item', '\[( |[xX])\]', NULL, 'TodoList::transformItem');
-
-        // markup for voting element
         StudipFormat::addStudipMarkup('todolist', "\[todo:([0-9a-f]{32})\]", NULL, 'TodoList::markup');
 
         // Add url, css and js to page header
