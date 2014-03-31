@@ -1,0 +1,48 @@
+.clearfix {
+  *zoom: 1;
+}
+.clearfix:before,
+.clearfix:after {
+  display: table;
+  content: "";
+  line-height: 0;
+}
+.clearfix:after {
+  clear: both;
+}
+.hide-text {
+  font: 0/0 a;
+  color: transparent;
+  text-shadow: none;
+  background-color: transparent;
+  border: 0;
+}
+.input-block-level {
+  display: block;
+  width: 100%;
+  min-height: 30px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+input[type=checkbox][data-todoitem] {
+  display: none;
+}
+input[type=checkbox][data-todoitem] + label:before {
+  background-image: url("http://127.0.0.1/~tleilax/studip/trunk/assets/images/icons/16/blue/checkbox-unchecked.png");
+  background-image: -webkit-image-set(url("http://127.0.0.1/~tleilax/studip/trunk/assets/images/icons/16/blue/checkbox-unchecked.png") 1x,url("http://127.0.0.1/~tleilax/studip/trunk/assets/images/icons/32/blue/checkbox-unchecked.png") 2x);
+  background-repeat: no-repeat;
+  content: '';
+  cursor: pointer;
+  display: inline-block;
+  height: 16px;
+  vertical-align: middle;
+  width: 16px;
+}
+input[type=checkbox][data-todoitem]:checked + label:before {
+  background-image: url("http://127.0.0.1/~tleilax/studip/trunk/assets/images/icons/16/blue/checkbox-checked.png");
+  background-image: -webkit-image-set(url("http://127.0.0.1/~tleilax/studip/trunk/assets/images/icons/16/blue/checkbox-checked.png") 1x,url("http://127.0.0.1/~tleilax/studip/trunk/assets/images/icons/32/blue/checkbox-checked.png") 2x);
+}
+input[type=checkbox][data-todoitem].ajaxing + label:before {
+  background-image: url("http://127.0.0.1/~tleilax/studip/trunk/assets/images/ajax_indicator_small.gif");
+}
