@@ -1,4 +1,10 @@
-studip-todolist-markup
-======================
+Stud.IP: Todo-List Markup
+=========================
 
-Stud.IP: Adds new markup items for todo lists
+Adds new markup items for todo lists
+
+```
+[X] Buy milk
+[ ] Drink milk
+[ ] [ ] [ ]Repeat every other day
+```
