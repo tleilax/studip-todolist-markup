@@ -62,7 +62,7 @@ class TodoList extends StudipPlugin implements SystemPlugin
         foreach ($temp as $row) {
             $states[$row['item_id']] = array(
                 'checked' => (bool)$row['state'],
-                'info'    => studip_utf8encode(self::get_item_info($row)),
+                'info'    => self::get_item_info($row),
             );
         }
 
