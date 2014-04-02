@@ -1,4 +1,4 @@
-(function ($) {
+(function ($, STUDIP) {
 
     // Change handler, triggered if checkbox is manipulated
     // Sends the new state to the server
@@ -21,49 +21,41 @@
         });
     });
 
-    // Polling mechanism, actively watch for changes on server
-    var polling     = false,
-        should_poll = true;
-    function poll() {
-        if (!should_poll || polling) {
+    // Attach polling mechanism to global js updater
+    var todolist = {};
+    todolist.update = function (states) {
+        $(':checkbox[data-todoitem]').each(function () {
+            var id      = $(this).data().todoitem,
+                checked = false,
+                info    = '';
+            if (states[id]) {
+                checked = states[id].checked;
+                info    = states[id].info;
+            }
+            $(this).prop('checked', checked);
+            $(this).next('label').attr('title', info);
+        });
+    };
+
+    // Check for any todolist items present on document ready
+    $(document).ready(function () {
+        var temp, ids;
+        temp = $(':checkbox[data-todoitem]').map(function () {
+            return $(this).data().todoitem;
+        });
+        ids = $.makeArray(temp);
+
+        // If no items are present, just leave
+        if (ids.length === 0) {
             return;
         }
-        polling = true;
-        
-        var url  = $('meta[name="todolist-base-url"]').attr('content'),
-            temp = $(':checkbox[data-todoitem]').map(function () {
-                return $(this).data().todoitem;
-            }),
-            ids  = $.makeArray(temp);
 
-        $.getJSON(url + 'poll', {ids: ids}, function (response) {
-            $(':checkbox[data-todoitem]').each(function () {
-                var id      = $(this).data().todoitem,
-                    checked = false,
-                    info    = '';
-                if (response.states[id]) {
-                    checked = response.states[id].checked;
-                    info    = response.states[id].info;
-                }
-                $(this).prop('checked', checked);
-                $(this).next('label').attr('title', info);
-            });
-        }).always(function () {
-            polling = false;
-        });
-    }
-
-    $(window).blur(function () {
-        console.log('no polling!');
-        should_poll = false;
-    }).focus(function () {
-        console.log('polling!');
-        should_poll = true;
-    })
-
-    $(document).ready(function () {
-        setInterval(poll, 30 * 1000);
+        // Attach data gatherer (filled with previously collected ids)
+        // and inject todolist object to global STUDIP object
+        todolist.periodicalPushData = function () {
+            return ids;
+        };
+        STUDIP.TodoList = todolist;
     });
-
     
-}(jQuery));
+}(jQuery, STUDIP));

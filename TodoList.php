@@ -14,6 +14,11 @@ class TodoList extends StudipPlugin implements SystemPlugin
     {
         parent::__construct();
 
+        if (UpdateInformation::isCollecting() && isset($_REQUEST['page_info']['TodoList'])) {
+            $ids = (array)$_REQUEST['page_info']['TodoList'];
+            UpdateInformation::setInformation('TodoList.update', $this->update($ids));
+        }
+
         StudipTransformFormat::addStudipMarkup('todolist_item', '\[( |[xX])\]', NULL, 'TodoList::transformItem');
         StudipFormat::addStudipMarkup('todolist', "\[todo:([0-9a-f]{32})\]", NULL, 'TodoList::markup');
 
@@ -43,10 +48,8 @@ class TodoList extends StudipPlugin implements SystemPlugin
         $this->render_json(compact('state'));
     }
 
-    public function poll_action()
+    private function update($ids)
     {
-        $ids = Request::optionArray('ids');
-        
         $query = "SELECT item_id, state, chdate, mkdate, user_id
                   FROM todolist_items
                   WHERE item_id IN (:ids)";
@@ -63,7 +66,7 @@ class TodoList extends StudipPlugin implements SystemPlugin
             );
         }
 
-        $this->render_json(compact('states'));
+        return $states;
     }
     
     private function get_item_info($row)
