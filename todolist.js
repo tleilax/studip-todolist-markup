@@ -49,13 +49,15 @@
         if (ids.length === 0) {
             return;
         }
-
-        // Attach data gatherer (filled with previously collected ids)
-        // and inject todolist object to global STUDIP object
-        todolist.periodicalPushData = function () {
-            return ids;
-        };
-        STUDIP.TodoList = todolist;
+        
+        if (STUDIP.JSUpdater.hasOwnProperty('register')) {            
+            STUDIP.JSUpdater.register('TodoList.update', todolist.update, ids);
+        } else {
+            todolist.periodicalPushData = function () {
+                return ids;
+            };
+            STUDIP.TodoList = todolist;
+        }
     });
-    
+
 }(jQuery, STUDIP));

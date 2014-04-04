@@ -14,8 +14,12 @@ class TodoList extends StudipPlugin implements SystemPlugin
     {
         parent::__construct();
 
-        if (UpdateInformation::isCollecting() && isset($_REQUEST['page_info']['TodoList'])) {
-            $ids = (array)$_REQUEST['page_info']['TodoList'];
+        if (UpdateInformation::isCollecting()) {
+            if (method_exists('UpdateInformation', 'hasData') && UpdateInformation::hasData('TodoList.update')) {
+                $ids = UpdateInformation::getData('TodoList.update');
+            } elseif (isset($_REQUEST['page_info']['TodoList']))) {
+                $ids = (array)$_REQUEST['page_info']['TodoList'];
+            }
             UpdateInformation::setInformation('TodoList.update', $this->update($ids));
         }
 
@@ -31,7 +35,7 @@ class TodoList extends StudipPlugin implements SystemPlugin
         $this->addStylesheet('todolist.less');
     }
 
-    public function toggle_action($id, $state) 
+    public function toggle_action($id, $state)
     {
         $query = "INSERT INTO todolist_items (item_id, state, user_id, mkdate, chdate)
                   VALUES (:id, :state, :user_id, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
@@ -68,7 +72,7 @@ class TodoList extends StudipPlugin implements SystemPlugin
 
         return $states;
     }
-    
+
     private function get_item_info($row)
     {
         if ($row['chdate'] === $row['mkdate']) {
@@ -79,7 +83,7 @@ class TodoList extends StudipPlugin implements SystemPlugin
                          reltime($row['chdate']),
                          User::find($row['user_id'])->getFullName());
     }
-    
+
     private function render_json($data)
     {
         header('Content-Type: text/json;charset=utf-8');
@@ -112,7 +116,7 @@ class TodoList extends StudipPlugin implements SystemPlugin
         $statement->bindValue(':id', $matches[1]);
         $statement->execute();
         $temp = $statement->fetch(PDO::FETCH_ASSOC);
-        
+
         $checked   = (bool)$temp['state'];
         $user_info = self::get_item_info($temp);
 
