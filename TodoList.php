@@ -17,7 +17,7 @@ class TodoList extends StudipPlugin implements SystemPlugin
         if (UpdateInformation::isCollecting()) {
             if (method_exists('UpdateInformation', 'hasData') && UpdateInformation::hasData('TodoList.update')) {
                 $ids = UpdateInformation::getData('TodoList.update');
-            } elseif (isset($_REQUEST['page_info']['TodoList']))) {
+            } elseif (isset($_REQUEST['page_info']['TodoList'])) {
                 $ids = (array)$_REQUEST['page_info']['TodoList'];
             }
             UpdateInformation::setInformation('TodoList.update', $this->update($ids));
