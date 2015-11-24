@@ -1,4 +1,7 @@
+/*jslint browser: true */
+/*global jQuery, STUDIP */
 (function ($, STUDIP) {
+    'use strict';
 
     // Change handler, triggered if checkbox is manipulated
     // Sends the new state to the server
@@ -49,8 +52,8 @@
         if (ids.length === 0) {
             return;
         }
-        
-        if (STUDIP.JSUpdater.hasOwnProperty('register')) {            
+
+        if (STUDIP.JSUpdater.hasOwnProperty('register')) {
             STUDIP.JSUpdater.register('TodoList.update', todolist.update, ids);
         } else {
             todolist.periodicalPushData = function () {
