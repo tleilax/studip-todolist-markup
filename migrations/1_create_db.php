@@ -1,5 +1,5 @@
 <?php
-class CreateDb extends DBMigration
+class CreateDb extends Migration
 {
     public function get_description()
     {
