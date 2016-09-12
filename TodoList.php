@@ -1,5 +1,4 @@
 <?php
-
 /**
  * TodoList - Plugin for Stud.IP
  *
@@ -13,6 +12,8 @@ class TodoList extends StudipPlugin implements SystemPlugin
     public function __construct()
     {
         parent::__construct();
+
+        StudipAutoloader::addAutoloadPath(__DIR__ . '/models', 'TodoList');
 
         if (UpdateInformation::isCollecting()) {
             if (method_exists('UpdateInformation', 'hasData') && UpdateInformation::hasData('TodoList.update')) {
@@ -37,51 +38,26 @@ class TodoList extends StudipPlugin implements SystemPlugin
 
     public function toggle_action($id, $state)
     {
-        $query = "INSERT INTO todolist_items (item_id, state, user_id, mkdate, chdate)
-                  VALUES (:id, :state, :user_id, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
-                  ON DUPLICATE KEY
-                    UPDATE state = VALUES(state),
-                           user_id = VALUES(user_id),
-                           chdate = UNIX_TIMESTAMP()";
-        $statement = DBManager::get()->prepare($query);
-        $statement->bindValue(':id', $id);
-        $statement->bindValue(':state', (int)$state);
-        $statement->bindValue(':user_id', $GLOBALS['user']->id);
-        $statement->execute();
+        $item = new TodoList\ListItem($id);
+        $item->state = (int)$state;
+        $item->store();
 
         $this->render_json(compact('state'));
     }
 
     private function update($ids)
     {
-        $query = "SELECT item_id, state, chdate, mkdate, user_id
-                  FROM todolist_items
-                  WHERE item_id IN (:ids)";
-        $statement = DBManager::get()->prepare($query);
-        $statement->bindValue(':ids', $ids, StudipPDO::PARAM_ARRAY);
-        $statement->execute();
-        $temp = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $items = TodoList\ListItem::findMany($ids);
 
         $states = array();
-        foreach ($temp as $row) {
-            $states[$row['item_id']] = array(
-                'checked' => (bool)$row['state'],
-                'info'    => self::get_item_info($row),
+        foreach ($items as $item) {
+            $states[$item->id] = array(
+                'checked' => (bool)$item->state,
+                'info'    => $item->chinfo,
             );
         }
 
         return $states;
-    }
-
-    private function get_item_info($row)
-    {
-        if ($row['chdate'] === $row['mkdate']) {
-            return '';
-        }
-
-        return sprintf(_('Letzte Änderung %s von %s'),
-                         reltime($row['chdate']),
-                         User::find($row['user_id'])->getFullName());
     }
 
     private function render_json($data)
@@ -92,39 +68,22 @@ class TodoList extends StudipPlugin implements SystemPlugin
 
     public static function transformItem($markup, $matches, $contents)
     {
-        $id = md5(uniqid(__CLASS__, true));
+        $item = new TodoList\ListItem();
+        $item->state = (int)(strtolower($matches[1]) === 'x');
+        $item->store();
 
-        $query = "INSERT INTO todolist_items (item_id, state, user_id, mkdate, chdate)
-                  VALUES (:id, :state, :user_id, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())
-                  ON DUPLICATE KEY
-                    UPDATE state = VALUES(state),
-                           user_id = VALUES(user_id),
-                           chdate = UNIX_TIMESTAMP()";
-        $statement = DBManager::get()->prepare($query);
-        $statement->bindValue(':id', $id);
-        $statement->bindValue(':state', (int)(strtolower($matches[1]) === 'x'));
-        $statement->bindValue(':user_id', $GLOBALS['user']->id);
-        $statement->execute();
-
-        return sprintf('[todo:%s]', $id);
+        return sprintf('[todo:%s]', $item->id);
     }
 
     public static function markup($markup, $matches, $contents)
     {
-        $query = "SELECT state, user_id, chdate, mkdate FROM todolist_items WHERE item_id = :id";
-        $statement = DBManager::get()->prepare($query);
-        $statement->bindValue(':id', $matches[1]);
-        $statement->execute();
-        $temp = $statement->fetch(PDO::FETCH_ASSOC);
-
-        $checked   = (bool)$temp['state'];
-        $user_info = self::get_item_info($temp);
+        $item = new TodoList\ListItem($matches[1]);
 
         $template = '<input id="todo-%1$s" type="checkbox" data-todoitem="%1$s"%2$s>'
                   . '<label for="todo-%1$s" title="%3$s"></label>';
         return sprintf($template,
                        $matches[1],
-                       $checked ? ' checked' : '',
-                       $user_info);
+                       $item->state ? ' checked' : '',
+                       $item->chinfo);
     }
 }
